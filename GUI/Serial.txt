@@ -1,0 +1,163 @@
+LIBRARY: RXTXcomm.jar
+
+import gnu.io.*;
+
+public class Serial implements SerialPortEventListener 
+{
+    SerialPort serialPort;
+
+    public BufferedReader buffIn;
+
+    private InputStream  stmIn;
+    private OutputStream stmOut;
+
+    private final Object stopRead = new Object();
+    private final Object stopWrite = new Object();
+    public boolean stopR = false;
+    public boolean stopW = false;
+
+    String port = "";
+    int portBaud = // baudrate
+
+    public static final int TIME_OUT = 250;
+
+    @Override
+    public void serialEvent(SerialPortEvent s_evt)
+    {
+        switch(s_evt.getEventType())
+        {
+	    case SerialPortEvent.DATA_AVAILABLE:
+	    
+	        try
+	        {
+	            stmReader = stmIn.readLine();
+	        } 
+	        catch(IOException e) {}
+
+	        break;
+
+	    default: break;
+	}
+    }
+
+    public void addSerialEvent()
+    {
+	try
+	{
+	    buffIn = new BufferedReader(new InputStreamReader(serialPort.getInputStream()));
+	    serialPort.addEventListener(this);
+	    serialPort.notifyOnDataAvailable(true);
+	}
+	catch(IOException | TooManyListenersException | NullPointerException e) {} 
+    }
+
+    public ArrayList scan_ports()
+    {
+	ArrayList ports = new ArrayList();
+
+	Enumeration<CommPortIdentifier> portEnum = CommPortIdentifier.getPortIdentifier();
+
+	while(portEnum.hasMoreElements())
+	{
+	    CommPortIdentifier portIdentifier = portEnum.nextElement();
+
+	    if(!portIdentifier.isCurrentlyOwned() && portIdentifier.getPortType() == CommPortIdentifier.PORT_SERIAL)
+	    {
+		ports.add(portIdentifer.getName());
+	    }
+	}
+	
+	return ports;
+    }
+
+
+    public void setPort(String portName)
+    {
+	if(!portName.equals("None") && portName != null)
+	{
+	    port = portName;
+	}
+	else
+	{
+	    port = "";
+	}
+    }
+    
+    public boolean connectPort()
+    {
+	try
+	{
+	    CommPortIdentifier portID = CommPortIdentifier.getPortIdentifier(port);
+
+	    serialPort = (SerialPort) portID.open("ADR", TIME_OUT);
+	    serialPort.setSerialPortParams(portBaud, SerialPort.DATABITS_8, SerialPort.STOPBITS_1, SerialPort.PARITY_NONE);
+
+	    stmIn = serialPort.getInputStream();
+	    stmOut = serialPort.getOutputStream();
+	}
+	catch(Exception e) {return false;}
+
+	return true;
+    }
+
+    public boolean disconnectPort()
+    {
+	try
+	{
+	    synchronized(stopRead) {stopR = true;}
+	    syncrhonized(stopWrite) {stopW = true;}
+
+	    serialPort.removeEventListener();
+	    serialPort.close();
+	    stmIn.close();
+	    stmOut.close();
+	}
+	catch(IOException e) {return false;}
+
+	return true;
+    }
+
+    public char receive()
+    {
+	char ch = 0;
+
+    	try
+	{
+	    ch = (char) stmIn.read();
+	    synchronized(stopRead) {stopR = false;}
+	}
+	catch(IOException e) {}
+
+	return ch;
+    }
+
+    public char[] receive(int len)
+    {
+	char ch = 0;	
+        char[] arr = new char[len];
+
+	try
+	{
+	    for(int i = 0; i < len; i++)
+	    {
+		ch = (char) stmIn.read();
+		arr[i] = ch;
+	    }
+
+	    synchronized(stopRead) {stopR = false;}
+	}
+	catch(IOException e) {}
+
+	return arr;
+    }
+
+    public void transmit(char ch)
+    {
+	try
+	{
+	    stmOut.write((int) ch);
+	    synchronized(stopWrite) {stopW = false;}
+	}
+	catch(IOException e) {}
+    }
+}

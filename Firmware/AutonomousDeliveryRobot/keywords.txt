@@ -1,0 +1,15 @@
+Motor 	KEYWORD1
+
+Attach 	KEYWORD2
+Stop 	KEYWORD2
+Forward KEYWORD2
+Reverse KEYWORD2
+
+Encoder KEYWORD2
+Speed 	KEYWORD2
+
+PControl KEYWORD2
+PIControl KEYWORD2
+PIDControl KEYWORD2
+
+Limits 	KEYWORD2
